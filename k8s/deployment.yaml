@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ci-cd-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ci-cd
+  template:
+    metadata:
+      labels:
+        app: ci-cd
+    spec:
+      containers:
+      - name: ci-cd-container
+        image: olakitanakinya/my-node-app:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+
