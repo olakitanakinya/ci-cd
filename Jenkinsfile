@@ -4,7 +4,7 @@ pipeline {
     environment {
         GIT_CREDENTIALS_ID = 'github-credentials'
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
-        DOCKER_IMAGE = 'your-dockerhub-username/my-node-app'
+        DOCKER_IMAGE = 'olakitanankinya/my-node-app'
     }
 
     stages {
