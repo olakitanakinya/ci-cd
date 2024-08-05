@@ -1,34 +1,53 @@
 pipeline {
     agent any
 
+    environment {
+        GIT_CREDENTIALS_ID = 'github-credentials'
+        DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
+        DOCKER_IMAGE = 'your-dockerhub-username/my-node-app'
+    }
+
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/olakitanakinya/ci-cd.git'
+                git url: 'https://github.com/olakitanakinya/ci-cd.git',
+                    credentialsId: "${env.GIT_CREDENTIALS_ID}"
             }
         }
-        stage('Build Docker Image') {
+
+        stage('Build') {
             steps {
                 script {
-                    dockerImage = docker.build("my-node-app")
+                    docker.build("${env.DOCKER_IMAGE}")
                 }
             }
         }
-        stage('Push Docker Image') {
+
+        stage('Push') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        dockerImage.push("latest")
+                    docker.withRegistry('https://index.docker.io/v1/', "${env.DOCKERHUB_CREDENTIALS_ID}") {
+                        docker.image("${env.DOCKER_IMAGE}").push("latest")
                     }
                 }
             }
         }
-        stage('Deploy to Kubernetes') {
+
+        stage('Deploy') {
             steps {
                 script {
-                    kubernetesDeploy(configs: 'k8s/deployment.yaml', kubeconfigId: 'kubeconfig')
+                    kubernetesDeploy(
+                        configs: 'k8s/deployment.yaml',
+                        kubeconfigId: 'kubernetes-config'
+                    )
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
