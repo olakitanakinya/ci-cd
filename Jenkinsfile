@@ -2,49 +2,36 @@ pipeline {
     agent any
 
     environment {
-        GIT_CREDENTIALS_ID = 'github-credentials'
-        DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
+        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'  // Use the ID of your Docker Hub credentials
         DOCKER_IMAGE = 'olakitanankinya/my-node-app'
+        DOCKER_REGISTRY_URL = 'https://index.docker.io/v1/'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/olakitanakinya/ci-cd.git',
-                    credentialsId: "${env.GIT_CREDENTIALS_ID}"
+                git credentialsId: 'github-credentials', url: 'https://github.com/olakitanakinya/ci-cd.git'
             }
         }
-
+        
         stage('Build') {
             steps {
-                script {
-                    docker.build("${env.DOCKER_IMAGE}")
-                }
+                sh 'docker build -t ${DOCKER_IMAGE} .'
             }
         }
 
         stage('Push') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', "${env.DOCKERHUB_CREDENTIALS_ID}") {
-                        docker.image("${env.DOCKER_IMAGE}").push("latest")
+                    docker.withRegistry(DOCKER_REGISTRY_URL, DOCKER_CREDENTIALS_ID) {
+                        sh 'docker tag ${DOCKER_IMAGE} ${DOCKER_IMAGE}:latest'
+                        sh 'docker push ${DOCKER_IMAGE}:latest'
                     }
                 }
             }
         }
-
-        stage('Deploy') {
-            steps {
-                script {
-                    kubernetesDeploy(
-                        configs: 'k8s/deployment.yaml',
-                        kubeconfigId: 'kubernetes-config'
-                    )
-                }
-            }
-        }
     }
-
+    
     post {
         always {
             cleanWs()
